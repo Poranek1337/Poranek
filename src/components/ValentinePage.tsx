@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useLayoutEffect } from 'react'
 import HeartButton from './HeartButton'
 import '../styles/valentine.css'
 
@@ -16,6 +16,10 @@ export default function ValentinePage({
   const [showResponse, setShowResponse] = useState(false)
   const [noCount, setNoCount] = useState<number>(0)
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false)
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  const yesRef = useRef<HTMLButtonElement | null>(null)
+  const noRef = useRef<HTMLButtonElement | null>(null)
+  const [measuredMaxScale, setMeasuredMaxScale] = useState<number | null>(null)
 
   useEffect(() => {
     setActiveGif(gifNoUrl)
@@ -35,6 +39,33 @@ export default function ValentinePage({
     img.src = gifYesUrl
   }, [showResponse, gifYesUrl])
 
+  useLayoutEffect(() => {
+    // measure available space and compute a safe maximum scale so 'Tak' won't overflow the card
+    const card = cardRef.current
+    const yes = yesRef.current
+    const no = noRef.current
+    if (!card || !yes || !no) return
+
+    const cardRect = card.getBoundingClientRect()
+    const yesRect = yes.getBoundingClientRect()
+    const noRect = no.getBoundingClientRect()
+
+    // compute how much space to the right edge of the card remains after yes button's left edge
+    const spaceToRight = cardRect.right - yesRect.left
+
+    // desired width to cover the no button: distance from yes left to no right
+    const desiredCoverWidth = noRect.right - yesRect.left
+
+    const currentYesWidth = yesRect.width
+    const maxScaleBySpace = spaceToRight / currentYesWidth
+    const maxScaleByCover = desiredCoverWidth / currentYesWidth
+
+    // pick the minimal sensible max scale, guard NaN and set a lower bound
+    let computed = Math.max(1.2, Math.min(maxScaleBySpace, maxScaleByCover))
+    if (!isFinite(computed) || computed < 1.2) computed = 1.2
+    setMeasuredMaxScale(computed)
+  }, [isSmallScreen])
+
   function onYes() {
     setActiveGif(gifYesUrl)
     setShowResponse(true)
@@ -47,8 +78,9 @@ export default function ValentinePage({
   // growth tuned so 'Tak' expands to the right and covers 'Nie' without leaving the card
   // scale grows faster but is capped to avoid going off-screen
   // responsive max scale: smaller max on mobile to avoid overflowing the card
-  const maxScale = isSmallScreen ? 1.8 : 3
-  const yesScale = 1 + Math.min(0.6 * noCount, maxScale)
+  const defaultMax = isSmallScreen ? 1.8 : 3
+  const safeMax = measuredMaxScale ? Math.min(defaultMax, measuredMaxScale) : defaultMax
+  const yesScale = 1 + Math.min(0.6 * noCount, safeMax)
 
   // require multiple presses before 'Tak' is considered to be fully covering 'Nie'
   const minClicksToDisable = 3
@@ -78,13 +110,25 @@ export default function ValentinePage({
           <h2 className="response">Ooooo, tak! Wiedzialem!!!</h2>
         ) : (
           <div className="controls">
-            <HeartButton onClick={onYes} aria-label="Tak, zostanę" style={{ marginRight: 12, transformOrigin: 'left center', zIndex: isCovering ? 3 : 1, pointerEvents: 'auto' }} scale={yesScale}>
+            <HeartButton
+              onClick={onYes}
+              aria-label="Tak, zostanę"
+              buttonRef={yesRef}
+              style={{
+                marginRight: 12,
+                transformOrigin: 'left center',
+                pointerEvents: 'auto',
+                ...(isCovering ? { zIndex: 3 } : {}),
+              }}
+              scale={yesScale}
+            >
               Tak
             </HeartButton>
 
             <HeartButton
               onClick={onNo}
               aria-label="Nie"
+              buttonRef={noRef}
               style={{ transformOrigin: 'center', pointerEvents: isCovering ? 'none' : 'auto', opacity: isCovering ? 0.6 : 1, transition: 'opacity 120ms' }}
             >
               Nie
@@ -96,6 +140,8 @@ export default function ValentinePage({
           <p className="no-message">{currentNoMessage}</p>
         )}
       </div>
+      {/* attach ref to the card wrapper for measurements */}
+      <div style={{ position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }} ref={cardRef} />
     </main>
   )
 }
