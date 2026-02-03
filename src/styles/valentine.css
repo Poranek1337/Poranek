@@ -1,3 +1,7 @@
+/* reset */
+* { box-sizing: border-box; }
+html,body { height: 100%; margin: 0; padding: 0; }
+
 :root{
   --bg: #111318;
   --card: #1f1b2e;
@@ -90,8 +94,8 @@
 /* Responsive: phone-sized adjustments */
 @media (max-width: 420px) {
   .card {
-    width: 360px;
-    padding: 18px;
+    width: calc(100% - 32px);
+    padding: 14px;
   }
 
   .gif-wrap {

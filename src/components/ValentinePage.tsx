@@ -40,31 +40,51 @@ export default function ValentinePage({
   }, [showResponse, gifYesUrl])
 
   useLayoutEffect(() => {
-    // measure available space and compute a safe maximum scale so 'Tak' won't overflow the card
-    const card = cardRef.current
-    const yes = yesRef.current
-    const no = noRef.current
-    if (!card || !yes || !no) return
+    // Utility to compute measuredMaxScale based on current DOM sizes
+    const recompute = () => {
+      const card = cardRef.current
+      const yes = yesRef.current
+      const no = noRef.current
+      if (!card || !yes || !no) return
 
-    const cardRect = card.getBoundingClientRect()
-    const yesRect = yes.getBoundingClientRect()
-    const noRect = no.getBoundingClientRect()
+      const cardRect = card.getBoundingClientRect()
+      const yesRect = yes.getBoundingClientRect()
+      const noRect = no.getBoundingClientRect()
 
-    // compute how much space to the right edge of the card remains after yes button's left edge
-    const spaceToRight = cardRect.right - yesRect.left
+      // compute how much space to the right edge of the card remains after yes button's left edge
+      const spaceToRight = cardRect.right - yesRect.left
 
-    // desired width to cover the no button: distance from yes left to no right
-    const desiredCoverWidth = noRect.right - yesRect.left
+      // desired width to cover the no button: distance from yes left to no right
+      const desiredCoverWidth = noRect.right - yesRect.left
 
-    const currentYesWidth = yesRect.width
-    const maxScaleBySpace = spaceToRight / currentYesWidth
-    const maxScaleByCover = desiredCoverWidth / currentYesWidth
+      const currentYesWidth = yesRect.width || 1
+      const maxScaleBySpace = spaceToRight / currentYesWidth
+      const maxScaleByCover = desiredCoverWidth / currentYesWidth
 
-    // pick the minimal sensible max scale, guard NaN and set a lower bound
-    let computed = Math.max(1.2, Math.min(maxScaleBySpace, maxScaleByCover))
-    if (!isFinite(computed) || computed < 1.2) computed = 1.2
-    setMeasuredMaxScale(computed)
-  }, [isSmallScreen])
+      // pick the minimal sensible max scale, guard NaN and set a lower bound
+      let computed = Math.max(1.2, Math.min(maxScaleBySpace, maxScaleByCover))
+      if (!isFinite(computed) || computed < 1.2) computed = 1.2
+      setMeasuredMaxScale(computed)
+    }
+
+    // initial compute
+    recompute()
+
+    // observe resizes on card and buttons to keep computation accurate (mobile rotations etc.)
+    const ro = new ResizeObserver(() => recompute())
+    if (cardRef.current) ro.observe(cardRef.current)
+    if (yesRef.current) ro.observe(yesRef.current)
+    if (noRef.current) ro.observe(noRef.current)
+
+    // also recalc on window resize
+    const onResize = () => recompute()
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', onResize)
+    }
+  }, [isSmallScreen, noCount])
 
   function onYes() {
     setActiveGif(gifYesUrl)
@@ -99,7 +119,7 @@ export default function ValentinePage({
 
   return (
     <main className="valentine-root">
-      <div className="card">
+      <div className="card" ref={cardRef}>
         <div className="gif-wrap">
           <img src={activeGif} alt="valentine gif" className="valentine-gif" />
         </div>
@@ -140,8 +160,6 @@ export default function ValentinePage({
           <p className="no-message">{currentNoMessage}</p>
         )}
       </div>
-      {/* attach ref to the card wrapper for measurements */}
-      <div style={{ position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }} ref={cardRef} />
     </main>
   )
 }
