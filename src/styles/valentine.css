@@ -1,0 +1,112 @@
+:root{
+  --bg: #111318;
+  --card: #1f1b2e;
+  --accent: #ff557a;
+  --muted: #d6d6d6;
+}
+
+.valentine-root{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient( circle at 10% 10%, #2b0737 0%, #0f0e13 40%, #05060a 100% );
+  color:var(--muted);
+  padding:24px;
+}
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.1));
+  border-radius:16px;
+  padding:28px;
+  width:420px;
+  max-width:95vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 2px 6px rgba(255,85,122,0.06) inset;
+  text-align:center;
+}
+
+.gif-wrap{
+  height:220px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:12px;
+  margin-bottom:18px;
+}
+
+.valentine-gif{
+  max-height:220px;
+  width:auto;
+  border-radius:8px;
+  filter: drop-shadow(0 8px 30px rgba(255,85,122,0.18));
+}
+
+.prompt{
+  margin:6px 0 14px 0;
+  color: #ffd9e6;
+  font-size:20px;
+}
+
+.response{
+  margin:6px 0 14px 0;
+  color: var(--accent);
+  font-size:22px;
+  font-weight:700;
+}
+
+.controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  position: relative; /* allow z-indexed children */
+}
+
+.heart-btn{
+  background: linear-gradient(180deg,#ff7aa1,#ff4f78);
+  border:none;
+  color:white;
+  padding:12px 22px;
+  border-radius:999px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow: 0 6px 20px rgba(255,85,122,0.2);
+  outline: none;
+  transform-origin:center;
+  position: relative;
+  will-change: transform;
+}
+
+.no-message{
+  margin-top:14px;
+  color:#ffd1dd;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .heart-btn{ transition:none !important }
+}
+
+/* Responsive: phone-sized adjustments */
+@media (max-width: 420px) {
+  .card {
+    width: 360px;
+    padding: 18px;
+  }
+
+  .gif-wrap {
+    height: 160px;
+    margin-bottom: 12px;
+  }
+
+  .valentine-gif{
+    max-height:160px;
+  }
+
+  .prompt { font-size: 18px }
+
+  .heart-btn {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+}
